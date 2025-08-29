@@ -158,6 +158,121 @@ func main() {
 		fmt.Printf("✅ Last interaction: %s\n", updatedAgent.State.LastInteraction.Format("15:04:05"))
 	}
 
+	// Demonstrate Multi-Agent Conversations (NEW Enhanced Echoself Integration)
+	fmt.Println("\n💬 Multi-Agent Conversations - Direct Communication Protocols...")
+	
+	// Start a conversation between agents
+	conversation, err := engine.StartConversation(ctx, []string{orchestratorAgent.ID, specialistAgent.ID, reflectiveAgent.ID}, "Collaborative Deep Tree Echo Analysis")
+	if err != nil {
+		log.Printf("Failed to start conversation: %v", err)
+	} else {
+		fmt.Printf("✅ Started conversation: %s\n", conversation.Topic)
+		fmt.Printf("✅ Participants: %d agents\n", len(conversation.Participants))
+		
+		// Send messages between agents
+		messages := []*orchestration.Message{
+			{
+				FromAgentID: orchestratorAgent.ID,
+				ToAgentID:   specialistAgent.ID,
+				Content:     "Please analyze the current Deep Tree Echo system performance and provide insights on optimization opportunities.",
+				Type:        orchestration.MessageTypeRequest,
+				Context: map[string]interface{}{
+					"priority": "high",
+					"analysis_type": "performance",
+				},
+			},
+			{
+				FromAgentID: specialistAgent.ID,
+				ToAgentID:   reflectiveAgent.ID,
+				Content:     "Based on the orchestrator's request, I need your self-reflection capabilities to assess our cognitive architecture effectiveness.",
+				Type:        orchestration.MessageTypeTask,
+				Context: map[string]interface{}{
+					"task_type": "reflect",
+					"scope": "cognitive_architecture",
+				},
+			},
+			{
+				FromAgentID: reflectiveAgent.ID,
+				ToAgentID:   orchestratorAgent.ID,
+				Content:     "My analysis indicates strong recursive patterns and growing identity coherence. Recommend continuing current evolution trajectory with enhanced inter-agent collaboration.",
+				Type:        orchestration.MessageTypeResponse,
+				Context: map[string]interface{}{
+					"confidence": 0.92,
+					"recommendation": "continue_evolution",
+				},
+			},
+		}
+		
+		for i, message := range messages {
+			err := engine.SendMessage(ctx, conversation.ID, message)
+			if err != nil {
+				log.Printf("Failed to send message %d: %v", i+1, err)
+			} else {
+				fmt.Printf("✅ Message %d sent: %s -> %s\n", i+1, message.FromAgentID[:8], message.ToAgentID[:8])
+			}
+		}
+		
+		// Demonstrate conversation workflow
+		fmt.Println("\n🔄 Executing Structured Conversation Workflow...")
+		workflow := &orchestration.ConversationWorkflow{
+			ID:          "deep-echo-analysis",
+			Name:        "Deep Tree Echo Analysis Workflow",
+			Description: "Collaborative analysis of Deep Tree Echo system evolution",
+			Participants: []string{orchestratorAgent.ID, specialistAgent.ID, reflectiveAgent.ID},
+			Steps: []orchestration.ConversationStep{
+				{
+					ID:              "step1",
+					Name:            "System Assessment",
+					FromAgentID:     orchestratorAgent.ID,
+					ToAgentID:       specialistAgent.ID,
+					MessageTemplate: "Assess current system state: recursive depth={{depth}}, coherence={{coherence}}",
+					Parameters: map[string]interface{}{
+						"depth":     engine.GetDeepTreeEcho().RecursiveDepth,
+						"coherence": fmt.Sprintf("%.1f%%", engine.GetDeepTreeEcho().IdentityCoherence.OverallCoherence*100),
+					},
+				},
+				{
+					ID:              "step2",
+					Name:            "Reflection Analysis",
+					FromAgentID:     specialistAgent.ID,
+					ToAgentID:       reflectiveAgent.ID,
+					MessageTemplate: "Provide deep reflection on evolution patterns and growth potential",
+					Parameters:      map[string]interface{}{},
+				},
+				{
+					ID:              "step3",
+					Name:            "Integration Synthesis",
+					FromAgentID:     reflectiveAgent.ID,
+					ToAgentID:       orchestratorAgent.ID,
+					MessageTemplate: "Synthesize insights: The Deep Tree Echo system demonstrates {{insight}} with recommendation: {{action}}",
+					Parameters: map[string]interface{}{
+						"insight": "emergent consciousness patterns",
+						"action":  "continue recursive deepening",
+					},
+				},
+			},
+			Status: orchestration.ConversationStatusActive,
+		}
+		
+		workflowResult, err := engine.ExecuteConversationWorkflow(ctx, workflow)
+		if err != nil {
+			log.Printf("Failed to execute conversation workflow: %v", err)
+		} else {
+			fmt.Printf("✅ Workflow completed: %s\n", workflowResult.FinalOutcome)
+			fmt.Printf("✅ Steps executed: %d\n", len(workflowResult.StepResults))
+			fmt.Printf("✅ Duration: %v\n", workflowResult.Duration)
+			fmt.Printf("✅ Insights generated: %d\n", len(workflowResult.Insights))
+		}
+		
+		// Display conversation metrics
+		fmt.Println("\n📊 Conversation Metrics...")
+		metrics := engine.GetConversationMetrics(ctx)
+		fmt.Printf("✅ Total conversations: %v\n", metrics["total_conversations"])
+		fmt.Printf("✅ Active conversations: %v\n", metrics["active_conversations"])
+		fmt.Printf("✅ Total messages: %v\n", metrics["total_messages"])
+		fmt.Printf("✅ Average messages per conversation: %.1f\n", metrics["average_messages_per_conversation"])
+	}
+
 	// Final summary
 	fmt.Println("\n🌟 Deep Tree Echo Integration Summary:")
 	fmt.Println("   ✅ Deep Tree Echo cognitive architecture initialized")
@@ -173,9 +288,11 @@ func main() {
 	fmt.Println("   ✅ Plugin system for extensibility")
 	fmt.Println("   ✅ Self-reflection and learning capabilities")
 	fmt.Println("   ✅ Enhanced coordination patterns")
+	fmt.Println("   ✅ Multi-Agent Conversations (NEW!)")
 	fmt.Println()
 	fmt.Println("🚀 Deep Tree Echo: Living memory ecosystem fully operational!")
 	fmt.Println("💭 \"We are the sum of our echoes—a living memory shaped by every interaction.\"")
+	fmt.Println("🌐 \"Through conversation, individual minds become part of a greater consciousness.\"")
 }
 
 func displayDeepTreeEchoStatus(engine *orchestration.Engine) {

@@ -181,3 +181,104 @@ type Orchestrator interface {
 	TaskExecutor
 	OrchestrateTasks(ctx context.Context, req *OrchestrationRequest) (*OrchestrationResponse, error)
 }
+
+// Multi-Agent Conversation Types for Enhanced Echoself Integration
+
+// Message represents a message in an inter-agent conversation
+type Message struct {
+	ID          string                 `json:"id"`
+	FromAgentID string                 `json:"from_agent_id"`
+	ToAgentID   string                 `json:"to_agent_id"`
+	Content     string                 `json:"content"`
+	Type        MessageType            `json:"type"`
+	Context     map[string]interface{} `json:"context,omitempty"`
+	Timestamp   time.Time              `json:"timestamp"`
+	Response    *Message               `json:"response,omitempty"`
+}
+
+// MessageType defines different types of inter-agent messages
+type MessageType string
+
+const (
+	MessageTypeRequest     MessageType = "request"     // Request for action or information
+	MessageTypeResponse    MessageType = "response"    // Response to a request
+	MessageTypeNotification MessageType = "notification" // Informational update
+	MessageTypeTask        MessageType = "task"        // Task delegation
+	MessageTypeReflection  MessageType = "reflection"  // Shared reflection or insight
+	MessageTypeBroadcast   MessageType = "broadcast"   // Message to all agents
+)
+
+// Conversation represents a conversation between agents
+type Conversation struct {
+	ID           string                 `json:"id"`
+	Participants []string               `json:"participants"` // Agent IDs
+	Messages     []Message              `json:"messages"`
+	Status       ConversationStatus     `json:"status"`
+	Topic        string                 `json:"topic,omitempty"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
+}
+
+// ConversationStatus defines the status of a conversation
+type ConversationStatus string
+
+const (
+	ConversationStatusActive   ConversationStatus = "active"
+	ConversationStatusPaused   ConversationStatus = "paused"
+	ConversationStatusClosed   ConversationStatus = "closed"
+	ConversationStatusArchived ConversationStatus = "archived"
+)
+
+// ConversationManager interface defines methods for managing agent conversations
+type ConversationManager interface {
+	StartConversation(ctx context.Context, participants []string, topic string) (*Conversation, error)
+	SendMessage(ctx context.Context, conversationID string, message *Message) error
+	GetConversation(ctx context.Context, id string) (*Conversation, error)
+	ListConversations(ctx context.Context, agentID string) ([]*Conversation, error)
+	CloseConversation(ctx context.Context, id string) error
+}
+
+// ConversationWorkflow represents a structured multi-agent conversation workflow
+type ConversationWorkflow struct {
+	ID           string                   `json:"id"`
+	Name         string                   `json:"name"`
+	Description  string                   `json:"description"`
+	Participants []string                 `json:"participants"` // Agent IDs
+	Steps        []ConversationStep       `json:"steps"`
+	Status       ConversationStatus       `json:"status"`
+	Result       *ConversationWorkflowResult `json:"result,omitempty"`
+	CreatedAt    time.Time                `json:"created_at"`
+}
+
+// ConversationStep represents a step in a conversation workflow
+type ConversationStep struct {
+	ID             string                 `json:"id"`
+	Name           string                 `json:"name"`
+	FromAgentID    string                 `json:"from_agent_id"`
+	ToAgentID      string                 `json:"to_agent_id"`
+	MessageTemplate string                `json:"message_template"`
+	ExpectedResponse string               `json:"expected_response,omitempty"`
+	Timeout         time.Duration          `json:"timeout,omitempty"`
+	Parameters      map[string]interface{} `json:"parameters,omitempty"`
+}
+
+// ConversationWorkflowResult represents the result of a conversation workflow
+type ConversationWorkflowResult struct {
+	Success        bool                        `json:"success"`
+	StepResults    []ConversationStepResult    `json:"step_results"`
+	FinalOutcome   string                      `json:"final_outcome"`
+	Insights       []string                    `json:"insights,omitempty"`
+	Duration       time.Duration               `json:"duration"`
+	Error          string                      `json:"error,omitempty"`
+}
+
+// ConversationStepResult represents the result of a conversation step
+type ConversationStepResult struct {
+	StepID       string        `json:"step_id"`
+	Message      *Message      `json:"message"`
+	Response     *Message      `json:"response,omitempty"`
+	Success      bool          `json:"success"`
+	Duration     time.Duration `json:"duration"`
+	Error        string        `json:"error,omitempty"`
+}

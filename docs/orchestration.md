@@ -156,6 +156,66 @@ ollama orchestrate run-tasks default \
   --tasks "plugin:data_analysis:Analyze sentiment of customer feedback data"
 ```
 
+### Multi-Agent Conversations (🆕 Echoself Integration)
+
+The orchestration system now supports direct agent-to-agent communication through structured conversations:
+
+```bash
+# Start a conversation between agents
+ollama orchestrate start-conversation \
+  --participants agent1,agent2,agent3 \
+  --topic "Collaborative analysis session"
+
+# Send messages between agents
+ollama orchestrate send-message conversation-id \
+  --from agent1 \
+  --to agent2 \
+  --content "Please analyze the current system performance" \
+  --type request
+
+# Execute structured conversation workflows
+ollama orchestrate run-conversation-workflow \
+  --workflow-file collaboration-workflow.json \
+  --participants orchestrator,specialist,reflective
+
+# List conversations for an agent
+ollama orchestrate list-conversations agent1
+
+# Get conversation metrics
+ollama orchestrate conversation-metrics
+```
+
+#### Conversation Features:
+- **Message Types**: Request, Response, Notification, Task delegation, Reflection sharing, Broadcast
+- **Workflow Support**: Structured multi-step conversation patterns with templating
+- **State Integration**: Messages update agent memory and context automatically
+- **Task Delegation**: Agents can delegate tasks to each other through conversation
+- **Metrics Tracking**: Monitor conversation patterns and agent participation
+
+#### Example Conversation Workflow:
+```json
+{
+  "id": "analysis-workflow",
+  "name": "Collaborative Analysis",
+  "participants": ["orchestrator", "specialist", "reflective"],
+  "steps": [
+    {
+      "name": "Initial Request",
+      "from": "orchestrator",
+      "to": "specialist", 
+      "template": "Analyze: {{task}}",
+      "parameters": {"task": "system performance"}
+    },
+    {
+      "name": "Reflection Request",
+      "from": "specialist",
+      "to": "reflective",
+      "template": "Provide insights on: {{analysis}}"
+    }
+  ]
+}
+```
+
 ### Multi-Step Workflows
 
 ```bash
@@ -308,13 +368,13 @@ This implementation provides a foundation for integration with the actual echose
 4. **Plugin System**: Extensible architecture for custom task types and behaviors (data analysis example)
 5. **Enhanced Coordination**: Intelligent agent selection and coordinated workflows with performance reflection
 6. **Self-Reflection**: Agents can analyze their own performance and learning patterns
+7. **Multi-Agent Conversations**: Direct agent-to-agent communication protocols with structured workflows
 
 **🚧 Planned Future Enhancements:**
 1. **Advanced Learning**: Machine learning-based agent improvement and adaptation
 2. **Monitoring Dashboard**: Web interface for orchestration monitoring and management
 3. **Performance Optimization**: Advanced scheduling and resource management
-4. **Multi-Agent Conversations**: Direct agent-to-agent communication protocols
-5. **Integration APIs**: Enhanced integration with external echoself components
+4. **Integration APIs**: Enhanced integration with external echoself components
 
 ## Error Handling
 

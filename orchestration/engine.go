@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,18 +20,20 @@ type Engine struct {
 	tools          map[string]Tool
 	plugins        *PluginRegistry
 	deepTreeEcho   *DeepTreeEcho
+	conversations  map[string]*Conversation  // Multi-agent conversations
 	mu             sync.RWMutex
 }
 
 // NewEngine creates a new orchestration engine
 func NewEngine(client api.Client) *Engine {
 	return &Engine{
-		client:       client,
-		agents:       make(map[string]*Agent),
-		tasks:        make(map[string]*Task),
-		tools:        make(map[string]Tool),
-		plugins:      &PluginRegistry{plugins: make(map[string]Plugin)},
-		deepTreeEcho: NewDeepTreeEcho("Primary Deep Tree Echo System"),
+		client:        client,
+		agents:        make(map[string]*Agent),
+		tasks:         make(map[string]*Task),
+		tools:         make(map[string]Tool),
+		plugins:       &PluginRegistry{plugins: make(map[string]Plugin)},
+		deepTreeEcho:  NewDeepTreeEcho("Primary Deep Tree Echo System"),
+		conversations: make(map[string]*Conversation),
 	}
 }
 
@@ -704,5 +707,326 @@ func (e *Engine) GetDeepTreeEchoDashboardData() map[string]interface{} {
 			"reflection":   "Self-awareness and adaptation",
 			"evolution":    "Continuous recursive growth",
 		},
+	}
+}
+
+// Multi-Agent Conversation Management Methods (Enhanced Echoself Integration)
+
+// StartConversation initiates a new conversation between agents
+func (e *Engine) StartConversation(ctx context.Context, participants []string, topic string) (*Conversation, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	// Validate participants exist
+	for _, agentID := range participants {
+		if _, exists := e.agents[agentID]; !exists {
+			return nil, fmt.Errorf("agent not found: %s", agentID)
+		}
+	}
+
+	conversation := &Conversation{
+		ID:           uuid.New().String(),
+		Participants: participants,
+		Messages:     make([]Message, 0),
+		Status:       ConversationStatusActive,
+		Topic:        topic,
+		Metadata:     make(map[string]interface{}),
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+
+	e.conversations[conversation.ID] = conversation
+	
+	// Update agent states to reflect new conversation
+	for _, agentID := range participants {
+		agent := e.agents[agentID]
+		e.updateAgentState(agent, "conversation_started", conversation.ID)
+	}
+
+	slog.Info("Started conversation", "id", conversation.ID, "participants", len(participants), "topic", topic)
+	return conversation, nil
+}
+
+// SendMessage sends a message in a conversation
+func (e *Engine) SendMessage(ctx context.Context, conversationID string, message *Message) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	conversation, exists := e.conversations[conversationID]
+	if !exists {
+		return fmt.Errorf("conversation not found: %s", conversationID)
+	}
+
+	if conversation.Status != ConversationStatusActive {
+		return fmt.Errorf("conversation is not active: %s", conversation.Status)
+	}
+
+	// Validate sender and receiver
+	fromAgent, exists := e.agents[message.FromAgentID]
+	if !exists {
+		return fmt.Errorf("sender agent not found: %s", message.FromAgentID)
+	}
+
+	// Generate message ID and timestamp if not set
+	if message.ID == "" {
+		message.ID = uuid.New().String()
+	}
+	if message.Timestamp.IsZero() {
+		message.Timestamp = time.Now()
+	}
+
+	// Add message to conversation
+	conversation.Messages = append(conversation.Messages, *message)
+	conversation.UpdatedAt = time.Now()
+
+	// Update agent states
+	e.updateAgentState(fromAgent, "message_sent", message.Content)
+	
+	if message.ToAgentID != "" {
+		toAgent, exists := e.agents[message.ToAgentID]
+		if exists {
+			e.updateAgentState(toAgent, "message_received", message.Content)
+		}
+	}
+
+	// If this is a task message, process it
+	if message.Type == MessageTypeTask {
+		err := e.processTaskMessage(ctx, conversation, message)
+		if err != nil {
+			slog.Error("Failed to process task message", "error", err, "messageID", message.ID)
+		}
+	}
+
+	slog.Info("Message sent", "conversationID", conversationID, "from", message.FromAgentID, "to", message.ToAgentID, "type", message.Type)
+	return nil
+}
+
+// GetConversation retrieves a conversation by ID
+func (e *Engine) GetConversation(ctx context.Context, id string) (*Conversation, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	conversation, exists := e.conversations[id]
+	if !exists {
+		return nil, fmt.Errorf("conversation not found: %s", id)
+	}
+
+	return conversation, nil
+}
+
+// ListConversations lists conversations for a specific agent
+func (e *Engine) ListConversations(ctx context.Context, agentID string) ([]*Conversation, error) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	var conversations []*Conversation
+	for _, conversation := range e.conversations {
+		// Check if agent is a participant
+		for _, participant := range conversation.Participants {
+			if participant == agentID {
+				conversations = append(conversations, conversation)
+				break
+			}
+		}
+	}
+
+	return conversations, nil
+}
+
+// CloseConversation closes a conversation
+func (e *Engine) CloseConversation(ctx context.Context, id string) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	conversation, exists := e.conversations[id]
+	if !exists {
+		return fmt.Errorf("conversation not found: %s", id)
+	}
+
+	conversation.Status = ConversationStatusClosed
+	conversation.UpdatedAt = time.Now()
+
+	// Update agent states
+	for _, agentID := range conversation.Participants {
+		agent, exists := e.agents[agentID]
+		if exists {
+			e.updateAgentState(agent, "conversation_closed", id)
+		}
+	}
+
+	slog.Info("Closed conversation", "id", id, "participants", len(conversation.Participants))
+	return nil
+}
+
+// processTaskMessage processes a task delegation message
+func (e *Engine) processTaskMessage(ctx context.Context, conversation *Conversation, message *Message) error {
+	if message.ToAgentID == "" {
+		return fmt.Errorf("task message must specify target agent")
+	}
+
+	targetAgent, exists := e.agents[message.ToAgentID]
+	if !exists {
+		return fmt.Errorf("target agent not found: %s", message.ToAgentID)
+	}
+
+	// Create task from message context
+	taskType := TaskTypeCustom
+	if taskTypeInterface, exists := message.Context["task_type"]; exists {
+		if taskTypeStr, ok := taskTypeInterface.(string); ok {
+			taskType = taskTypeStr
+		}
+	}
+
+	task := &Task{
+		ID:       uuid.New().String(),
+		Type:     taskType,
+		Input:    message.Content,
+		Status:   TaskStatusPending,
+		AgentID:  message.ToAgentID,
+		CreatedAt: time.Now(),
+	}
+
+	// Execute task asynchronously
+	go func() {
+		result, err := e.ExecuteTask(ctx, task, targetAgent)
+		if err != nil {
+			slog.Error("Task execution failed", "error", err, "taskID", task.ID)
+			return
+		}
+
+		// Send response message
+		responseMessage := &Message{
+			ID:          uuid.New().String(),
+			FromAgentID: message.ToAgentID,
+			ToAgentID:   message.FromAgentID,
+			Content:     result.Output,
+			Type:        MessageTypeResponse,
+			Context: map[string]interface{}{
+				"task_id": task.ID,
+				"original_message_id": message.ID,
+			},
+			Timestamp: time.Now(),
+		}
+
+		err = e.SendMessage(ctx, conversation.ID, responseMessage)
+		if err != nil {
+			slog.Error("Failed to send response message", "error", err)
+		}
+	}()
+
+	return nil
+}
+
+// ExecuteConversationWorkflow executes a structured conversation workflow
+func (e *Engine) ExecuteConversationWorkflow(ctx context.Context, workflow *ConversationWorkflow) (*ConversationWorkflowResult, error) {
+	// Start the conversation (don't hold lock during this)
+	conversation, err := e.StartConversation(ctx, workflow.Participants, workflow.Description)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start conversation: %v", err)
+	}
+
+	result := &ConversationWorkflowResult{
+		Success:     true,
+		StepResults: make([]ConversationStepResult, len(workflow.Steps)),
+		Insights:    make([]string, 0),
+	}
+	
+	startTime := time.Now()
+
+	// Execute each step
+	for i, step := range workflow.Steps {
+		stepStartTime := time.Now()
+		
+		// Create message from template
+		message := &Message{
+			ID:          uuid.New().String(),
+			FromAgentID: step.FromAgentID,
+			ToAgentID:   step.ToAgentID,
+			Content:     e.processMessageTemplate(step.MessageTemplate, step.Parameters),
+			Type:        MessageTypeRequest,
+			Context:     step.Parameters,
+			Timestamp:   time.Now(),
+		}
+
+		// Send message
+		err := e.SendMessage(ctx, conversation.ID, message)
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Sprintf("Step %d failed: %v", i+1, err)
+			break
+		}
+
+		stepResult := ConversationStepResult{
+			StepID:   step.ID,
+			Message:  message,
+			Success:  true,
+			Duration: time.Since(stepStartTime),
+		}
+
+		result.StepResults[i] = stepResult
+		
+		// Add insight about the interaction
+		insight := fmt.Sprintf("Step %d: %s -> %s completed successfully", i+1, step.FromAgentID, step.ToAgentID)
+		result.Insights = append(result.Insights, insight)
+	}
+
+	result.Duration = time.Since(startTime)
+	result.FinalOutcome = fmt.Sprintf("Conversation workflow completed with %d steps", len(workflow.Steps))
+
+	slog.Info("Conversation workflow completed", "workflowID", workflow.ID, "steps", len(workflow.Steps), "success", result.Success)
+	return result, nil
+}
+
+// processMessageTemplate processes a message template with parameters
+func (e *Engine) processMessageTemplate(template string, params map[string]interface{}) string {
+	result := template
+	for key, value := range params {
+		placeholder := fmt.Sprintf("{{%s}}", key)
+		replacement := fmt.Sprintf("%v", value)
+		result = strings.ReplaceAll(result, placeholder, replacement)
+	}
+	return result
+}
+
+// GetConversationMetrics returns metrics about agent conversations
+func (e *Engine) GetConversationMetrics(ctx context.Context) map[string]interface{} {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	totalConversations := len(e.conversations)
+	activeConversations := 0
+	totalMessages := 0
+	
+	messageTypeCount := make(map[MessageType]int)
+	agentParticipation := make(map[string]int)
+
+	for _, conversation := range e.conversations {
+		if conversation.Status == ConversationStatusActive {
+			activeConversations++
+		}
+		
+		totalMessages += len(conversation.Messages)
+		
+		for _, message := range conversation.Messages {
+			messageTypeCount[message.Type]++
+		}
+		
+		for _, participant := range conversation.Participants {
+			agentParticipation[participant]++
+		}
+	}
+
+	return map[string]interface{}{
+		"total_conversations":  totalConversations,
+		"active_conversations": activeConversations,
+		"total_messages":       totalMessages,
+		"message_types":        messageTypeCount,
+		"agent_participation":  agentParticipation,
+		"average_messages_per_conversation": func() float64 {
+			if totalConversations == 0 {
+				return 0
+			}
+			return float64(totalMessages) / float64(totalConversations)
+		}(),
 	}
 }
