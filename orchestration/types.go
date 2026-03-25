@@ -25,10 +25,11 @@ type Agent struct {
 type AgentType string
 
 const (
-	AgentTypeGeneral     AgentType = "general"     // General purpose agent
-	AgentTypeSpecialist  AgentType = "specialist"  // Specialized for specific domains
+	AgentTypeGeneral      AgentType = "general"      // General purpose agent
+	AgentTypeSpecialist   AgentType = "specialist"   // Specialized for specific domains
 	AgentTypeOrchestrator AgentType = "orchestrator" // Coordinates other agents
-	AgentTypeReflective  AgentType = "reflective"  // Self-analyzing and improving
+	AgentTypeReflective   AgentType = "reflective"   // Self-analyzing and improving
+	AgentTypeEchoself     AgentType = "echoself"     // Core orchestration agent with recursive introspection
 )
 
 // AgentState maintains persistent state and memory for agents
@@ -281,4 +282,83 @@ type ConversationStepResult struct {
 	Success      bool          `json:"success"`
 	Duration     time.Duration `json:"duration"`
 	Error        string        `json:"error,omitempty"`
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AAR – Agent-Arena-Relation: Core Orchestration Framework
+//
+// The AAR model treats orchestration as three interlocking concepts:
+//   Agent  – an autonomous actor with goals and capabilities
+//   Arena  – the shared environment/knowledge space agents perceive and modify
+//   Relation – the typed, directional protocol that connects agents in the arena
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Arena represents the shared cognitive environment observed by all agents.
+// It holds a live snapshot of the repository, running context, and any
+// cross-agent facts that have been asserted into the shared space.
+type Arena struct {
+	ID              string                 `json:"id"`
+	Name            string                 `json:"name"`
+	Description     string                 `json:"description"`
+	// CognitiveContext is the most recent repository/environment snapshot.
+	CognitiveContext map[string]interface{} `json:"cognitive_context,omitempty"`
+	// SharedFacts holds cross-agent knowledge that has been asserted.
+	SharedFacts      map[string]interface{} `json:"shared_facts,omitempty"`
+	// ActiveAgents lists the IDs of agents currently operating in this arena.
+	ActiveAgents     []string               `json:"active_agents"`
+	CreatedAt        time.Time              `json:"created_at"`
+	UpdatedAt        time.Time              `json:"updated_at"`
+}
+
+// RelationType describes the semantic nature of an agent-to-agent relation.
+type RelationType string
+
+const (
+	RelationTypeDelegates    RelationType = "delegates"     // Agent routes a task to another
+	RelationTypeCollaborates RelationType = "collaborates"  // Agents work jointly on a task
+	RelationTypeObserves     RelationType = "observes"      // Agent monitors another silently
+	RelationTypeSupervises   RelationType = "supervises"    // Agent evaluates and guides another
+	RelationTypeInforms      RelationType = "informs"       // Agent broadcasts a fact
+)
+
+// Relation captures a directed, typed connection between two agents in an arena.
+type Relation struct {
+	ID          string                 `json:"id"`
+	ArenaID     string                 `json:"arena_id"`
+	FromAgentID string                 `json:"from_agent_id"`
+	ToAgentID   string                 `json:"to_agent_id"`
+	Type        RelationType           `json:"type"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	// Strength is a [0,1] weight representing how important this relation is.
+	Strength    float64                `json:"strength"`
+	CreatedAt   time.Time              `json:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at"`
+}
+
+// AARRoutingDecision is the result produced by the echoself core agent when it
+// decides how a task should be handled inside the AAR framework.
+type AARRoutingDecision struct {
+	TaskID       string                 `json:"task_id"`
+	TargetAgentID string                `json:"target_agent_id"`
+	Rationale    string                 `json:"rationale"`
+	RelationType RelationType           `json:"relation_type"`
+	Confidence   float64                `json:"confidence"`
+	Metadata     map[string]interface{} `json:"metadata,omitempty"`
+	Timestamp    time.Time              `json:"timestamp"`
+}
+
+// AARManager is the interface for systems that manage arenas and relations.
+type AARManager interface {
+	// Arena operations
+	CreateArena(ctx context.Context, arena *Arena) error
+	GetArena(ctx context.Context, id string) (*Arena, error)
+	UpdateArena(ctx context.Context, arena *Arena) error
+
+	// Relation operations
+	AddRelation(ctx context.Context, relation *Relation) error
+	GetRelations(ctx context.Context, arenaID string) ([]*Relation, error)
+	RemoveRelation(ctx context.Context, id string) error
+
+	// Routing
+	RouteTask(ctx context.Context, task *Task, arena *Arena) (*AARRoutingDecision, error)
 }

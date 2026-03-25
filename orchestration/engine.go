@@ -15,16 +15,17 @@ import (
 
 // Engine implements the core orchestration functionality
 type Engine struct {
-	client              api.Client
-	agents              map[string]*Agent
-	tasks               map[string]*Task
-	tools               map[string]Tool
-	plugins             *PluginRegistry
-	deepTreeEcho        *DeepTreeEcho
-	conversations       map[string]*Conversation  // Multi-agent conversations
-	learningSystem      *LearningSystem            // Advanced learning capabilities
-	performanceOptimizer *PerformanceOptimizer     // Performance optimization
-	mu                  sync.RWMutex
+	client               api.Client
+	agents               map[string]*Agent
+	tasks                map[string]*Task
+	tools                map[string]Tool
+	plugins              *PluginRegistry
+	deepTreeEcho         *DeepTreeEcho
+	conversations        map[string]*Conversation   // Multi-agent conversations
+	learningSystem       *LearningSystem             // Advanced learning capabilities
+	performanceOptimizer *PerformanceOptimizer      // Performance optimization
+	echoselfCoreAgent    *EchoselfCoreAgent          // Core AAR orchestration agent
+	mu                   sync.RWMutex
 }
 
 // NewEngine creates a new orchestration engine
@@ -39,13 +40,13 @@ func NewEngine(client api.Client) *Engine {
 		conversations:        make(map[string]*Conversation),
 		learningSystem:       NewLearningSystem(),
 		performanceOptimizer: NewPerformanceOptimizer(),
+		// echoselfCoreAgent is lazily initialised via RegisterEchoselfCoreAgent.
 	}
 }
 
 // CreateAgent creates a new orchestration agent
 func (e *Engine) CreateAgent(ctx context.Context, agent *Agent) error {
 	e.mu.Lock()
-	defer e.mu.Unlock()
 
 	if agent.ID == "" {
 		agent.ID = uuid.New().String()
@@ -71,7 +72,19 @@ func (e *Engine) CreateAgent(ctx context.Context, agent *Agent) error {
 	agent.UpdatedAt = time.Now()
 
 	e.agents[agent.ID] = agent
+	// Capture the echoself agent reference inside the lock so we hold a stable
+	// pointer even if another goroutine calls RegisterEchoselfCoreAgent later.
+	eca := e.echoselfCoreAgent
+	e.mu.Unlock()
+
 	slog.Info("Created orchestration agent", "id", agent.ID, "name", agent.Name)
+
+	// Register the new agent in the echoself arena if one is active.
+	if eca != nil {
+		if err := eca.RegisterAgent(ctx, agent.ID); err != nil {
+			slog.Warn("Failed to register new agent in echoself arena", "agent_id", agent.ID, "error", err)
+		}
+	}
 	return nil
 }
 
@@ -119,14 +132,22 @@ func (e *Engine) UpdateAgent(ctx context.Context, agent *Agent) error {
 // DeleteAgent removes an agent
 func (e *Engine) DeleteAgent(ctx context.Context, id string) error {
 	e.mu.Lock()
-	defer e.mu.Unlock()
 
 	if _, exists := e.agents[id]; !exists {
+		e.mu.Unlock()
 		return fmt.Errorf("agent not found: %s", id)
 	}
 
 	delete(e.agents, id)
+	eca := e.echoselfCoreAgent
+	e.mu.Unlock()
+
 	slog.Info("Deleted orchestration agent", "id", id)
+
+	// Remove from echoself arena if registered.
+	if eca != nil {
+		eca.UnregisterAgent(ctx, id)
+	}
 	return nil
 }
 
@@ -1369,4 +1390,80 @@ func (e *Engine) GetAgentLoads() map[string]*AgentLoad {
 // NewEchoChat creates a new EchoChat instance connected to this engine
 func (e *Engine) NewEchoChat() *EchoChat {
 	return NewEchoChat(e)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Echoself Core Agent (AAR) – Engine integration
+// ─────────────────────────────────────────────────────────────────────────────
+
+// RegisterEchoselfCoreAgent attaches an EchoselfCoreAgent to the engine and
+// immediately registers all existing agents in its arena.  If an agent already
+// exists with the echoself agent's ID it is replaced.
+func (e *Engine) RegisterEchoselfCoreAgent(ctx context.Context, agent *EchoselfCoreAgent) error {
+	e.mu.Lock()
+	e.echoselfCoreAgent = agent
+	// Register the echoself agent itself in the agents map so the API can find it.
+	echoselfAgentRecord := &Agent{
+		ID:          agent.ID(),
+		Name:        "echoself-core",
+		Description: "Core AAR orchestration agent with recursive self-introspection (echoself)",
+		Type:        AgentTypeEchoself,
+		State: &AgentState{
+			Memory:          make(map[string]interface{}),
+			Context:         make([]ContextItem, 0),
+			Goals:           []string{"orchestrate", "introspect", "route"},
+			Capabilities:    []string{"aar-routing", "introspection", "arena-management", "prompt-injection"},
+			LastInteraction: time.Now(),
+		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	e.agents[agent.ID()] = echoselfAgentRecord
+
+	// Capture existing agent IDs while holding the lock.
+	existingIDs := make([]string, 0, len(e.agents))
+	for id := range e.agents {
+		if id != agent.ID() {
+			existingIDs = append(existingIDs, id)
+		}
+	}
+	e.mu.Unlock()
+
+	// Register each existing agent in the arena (outside the main lock).
+	for _, id := range existingIDs {
+		if err := agent.RegisterAgent(ctx, id); err != nil {
+			slog.Warn("Failed to register existing agent in echoself arena", "agent_id", id, "error", err)
+		}
+	}
+
+	// Perform an initial arena refresh so the cognitive snapshot is populated.
+	if err := agent.RefreshArena(ctx); err != nil {
+		slog.Warn("Initial echoself arena refresh failed", "error", err)
+	}
+
+	slog.Info("Echoself core agent registered", "agent_id", agent.ID(), "arena_id", agent.Arena().ID)
+	return nil
+}
+
+// GetEchoselfCoreAgent returns the registered EchoselfCoreAgent, or nil if
+// none has been registered yet.
+func (e *Engine) GetEchoselfCoreAgent() *EchoselfCoreAgent {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	return e.echoselfCoreAgent
+}
+
+// RouteTaskViaEchoself uses the EchoselfCoreAgent to determine the best agent
+// for a task using the AAR framework.  If no echoself agent is registered the
+// call returns nil without error, and the caller should fall back to its own
+// routing logic.
+func (e *Engine) RouteTaskViaEchoself(ctx context.Context, task *Task) (*AARRoutingDecision, error) {
+	e.mu.RLock()
+	eca := e.echoselfCoreAgent
+	e.mu.RUnlock()
+
+	if eca == nil {
+		return nil, nil
+	}
+	return eca.RouteTask(ctx, task, eca.Arena())
 }
