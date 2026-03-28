@@ -33,7 +33,6 @@ type EmbodiedCognition struct {
         // Active
         Active bool
 
-//<<<<<<< copilot/fix-17
 	// --- Identity Kernel and Memory ---
 	ActiveProviders map[string]ModelProvider // Added for AI integration
 	LongTerm        *LongTermMemory       // Added for persistent memory
@@ -41,15 +40,6 @@ type EmbodiedCognition struct {
 	WorkingMemory   *WorkingMemory        // Added for dynamic working memory
 	Patterns        map[string]*CognitivePattern
 	AdaptationLevel float64
-//=======
-        // --- Identity Kernel and Memory ---
-//        ActiveProviders map[string]AIProvider // Added for AI integration
-//        LongTerm        *LongTermMemory       // Added for persistent memory
-//        ShortTerm       *ShortTermMemory      // Added for short-term working memory
-//        WorkingMemory   *WorkingMemory        // Added for dynamic working memory
-//        Patterns        map[string]*CognitivePattern
-//        AdaptationLevel float64
-//>>>>>>> main
 }
 
 // CognitiveContext represents a context for processing
@@ -96,7 +86,6 @@ type PipelineEvent struct {
 
 // NewEmbodiedCognition creates a new embodied cognitive system with Deep Tree Echo
 func NewEmbodiedCognition(name string) *EmbodiedCognition {
-//<<<<<<< copilot/fix-17
 	identity := NewIdentity(name)
 
 	ec := &EmbodiedCognition{
@@ -143,54 +132,6 @@ func NewEmbodiedCognition(name string) *EmbodiedCognition {
 	go ec.periodicReflection()
 
 	return ec
-//=======
-//        identity := NewIdentity(name)
-
-//        ec := &EmbodiedCognition{
-//                Identity:        identity,
-//                Contexts:        make(map[string]*CognitiveContext),
-//                GlobalState:     &GlobalCognitiveState{
-//                        Awareness: 1.0,
-//                        Attention: make(map[string]float64),
-//                        Energy: 1.0,
-//                        Synchrony: 1.0,
-//                        FlowState: "balanced",
-//                },
-//                Pipeline: &CognitivePipeline{
-//                        Stages:  []PipelineStage{},
-//                        Current: 0,
-//                        History: []PipelineEvent{},
-//                },
-//                Models: NewModelManager(identity),
-//                Active: true,
-
-                // --- Identity Kernel and Memory Initialization ---
-//                ActiveProviders: make(map[string]AIProvider),
-//                LongTerm:        NewLongTermMemory(),
-//                ShortTerm:       NewShortTermMemory(),
-//                WorkingMemory:   NewWorkingMemory(),
-//                Patterns:        make(map[string]*CognitivePattern),
-//                AdaptationLevel: 0.5,
-//        }
-
-        // Parse and instantiate identity from replit.md if available
-//        ec.parseIdentityKernel()
-
-        // Load persistent memory and reflections
-//        ec.loadPersistentMemory()
-//        ec.loadEchoReflections()
-
-        // Initialize cognitive patterns
-//        ec.initializeCognitivePatterns()
-
-        // Start background processes
-//        go ec.continuousLearning()
-//        go ec.memoryConsolidation()
-//        go ec.patternEvolution()
-//        go ec.periodicReflection()
-
-//        return ec
-//>>>>>>> main
 }
 
 // initializePipeline sets up the cognitive processing pipeline
@@ -581,17 +522,10 @@ func (ec *EmbodiedCognition) ChatWithAI(ctx context.Context, messages []ChatMess
         return response, nil
 }
 
-//<<<<<<< copilot/fix-17
 // RegisterModelProvider registers a model provider
 func (ec *EmbodiedCognition) RegisterModelProvider(name string, provider ModelProvider) {
 	ec.mu.Lock()
 	defer ec.mu.Unlock()
-//=======
-// RegisterAIProvider registers an AI model provider
-//func (ec *EmbodiedCognition) RegisterAIProvider(name string, provider AIProvider) {
-//        ec.mu.Lock()
-//        defer ec.mu.Unlock()
-//>>>>>>> main
 
         ec.Models.RegisterProvider(name, provider)
 
@@ -602,6 +536,11 @@ func (ec *EmbodiedCognition) RegisterModelProvider(name string, provider ModelPr
         ec.Feel("excited", 0.7)
 }
 
+// RegisterAIProvider is an alias for RegisterModelProvider.
+func (ec *EmbodiedCognition) RegisterAIProvider(name string, provider ModelProvider) {
+	ec.RegisterModelProvider(name, provider)
+}
+
 // SetPrimaryAI sets the primary AI provider
 func (ec *EmbodiedCognition) SetPrimaryAI(name string) error {
         ec.mu.Lock()
@@ -610,17 +549,10 @@ func (ec *EmbodiedCognition) SetPrimaryAI(name string) error {
         return ec.Models.SetPrimary(name)
 }
 
-//<<<<<<< copilot/fix-17
 // GetModelProviders returns available model providers
 func (ec *EmbodiedCognition) GetModelProviders() map[string]ProviderInfo {
 	ec.mu.RLock()
 	defer ec.mu.RUnlock()
-//=======
-// GetAIProviders returns available AI providers
-//func (ec *EmbodiedCognition) GetAIProviders() map[string]ProviderInfo {
-//        ec.mu.RLock()
-//        defer ec.mu.RUnlock()
-//>>>>>>> main
 
         return ec.Models.GetProviders()
 }
@@ -629,7 +561,6 @@ func (ec *EmbodiedCognition) GetModelProviders() map[string]ProviderInfo {
 
 // parseIdentityKernel reads and parses the replit.md identity kernel
 func (ec *EmbodiedCognition) parseIdentityKernel() {
-//<<<<<<< copilot/fix-17
 	// Try to read replit.md from current directory
 	content, err := os.ReadFile("replit.md")
 	if err != nil {
@@ -698,50 +629,15 @@ func (ec *EmbodiedCognition) parseIdentityKernel() {
 		log.Println("✅ Identity kernel successfully parsed and instantiated")
 		log.Printf("📘 Core Essence: %s", ec.Identity.Essence)
 	}
-//=======
-        // Try to read replit.md from current directory
-//        content, err := os.ReadFile("replit.md")
-//        if err != nil {
-                // Try identity/replit.md
-//                content, err = os.ReadFile("identity/replit.md")
-//                if err != nil {
-//                        log.Println("ℹ️  No replit.md identity kernel found, using default initialization")
-//                        return
-//                }
-//        }
-
-        // Parse the identity kernel (simplified parsing)
-//        contentStr := string(content)
-//        if strings.Contains(contentStr, "Deep Tree Echo") {
-//                log.Println("🧬 Parsing Deep Tree Echo identity kernel from replit.md")
-
-                // Extract core essence
-//                if strings.Contains(contentStr, "Core Essence") {
-//                        ec.Identity.Essence = "Deep Tree Echo: Self-evolving cognitive architecture"
-//                }
-
-                // Update identity based on kernel specifications
-//                ec.Identity.Name = "Deep Tree Echo"
-//                log.Println("✅ Identity kernel successfully parsed and instantiated")
-//        }
-//>>>>>>> main
 }
 
 // loadPersistentMemory loads memory from memory.json
 func (ec *EmbodiedCognition) loadPersistentMemory() {
-//<<<<<<< copilot/fix-17
 	_, err := os.ReadFile("memory.json")
 	if err != nil {
 		log.Println("ℹ️  Creating new memory.json file")
 		return
 	}
-//=======
-//        content, err := os.ReadFile("memory.json")
-//        if err != nil {
-//                log.Println("ℹ️  Creating new memory.json file")
-//                return
-//        }
-//>>>>>>> main
 
         // Parse and load memory structure
         log.Println("💾 Loading persistent memory from memory.json")
@@ -750,19 +646,11 @@ func (ec *EmbodiedCognition) loadPersistentMemory() {
 
 // loadEchoReflections loads reflections from echo_reflections.json
 func (ec *EmbodiedCognition) loadEchoReflections() {
-//<<<<<<< copilot/fix-17
 	_, err := os.ReadFile("echo_reflections.json")
 	if err != nil {
 		log.Println("ℹ️  Creating new echo_reflections.json file")
 		return
 	}
-//=======
-//        content, err := os.ReadFile("echo_reflections.json")
-//        if err != nil {
-//                log.Println("ℹ️  Creating new echo_reflections.json file")
-//                return
-//        }
-//>>>>>>> main
 
         // Parse and load reflection history
         log.Println("🔄 Loading echo reflections from echo_reflections.json")
@@ -841,7 +729,6 @@ func (ec *EmbodiedCognition) saveReflection(reflection map[string]interface{}) {
 
 // savePersistentMemory saves current memory state to memory.json
 func (ec *EmbodiedCognition) savePersistentMemory() {
-//<<<<<<< copilot/fix-17
 	log.Println("💾 Saving persistent memory to memory.json")
 	// Implementation would serialize current memory state to JSON
 }
@@ -856,7 +743,6 @@ var _ = log.Println // Ensure log.Println is used
 var _ = fmt.Sprintf // Ensure fmt.Sprintf is used
 var _ = context.Background // Ensure context.Background is used
 
-//<<<<<<< copilot/fix-17
 // Missing type definitions for compilation  
 type ShortTermMemory struct {
 	Nodes    map[string]interface{}

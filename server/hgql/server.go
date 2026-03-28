@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,8 +12,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/ollama/ollama/core/deeptreeecho"
-	"github.com/ollama/ollama/core/hgql"
+	"github.com/EchoCog/echollama/core/deeptreeecho"
+	"github.com/EchoCog/echollama/core/hgql"
 )
 
 // HGQLServer represents the main HGQL HTTP server

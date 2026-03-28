@@ -3,12 +3,11 @@ package hgql
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
-	"github.com/ollama/ollama/core/deeptreeecho"
+	"github.com/EchoCog/echollama/core/deeptreeecho"
 )
 
 // HGQLEngine represents the core HGQL processing engine

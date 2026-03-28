@@ -5,8 +5,9 @@ import (
 	"context"
 	"log"
 	"sync"
+	"time"
 
-	"github.com/ollama/ollama/core/deeptreeecho"
+	"github.com/EchoCog/echollama/core/deeptreeecho"
 )
 
 // GlobalIdentityFramework holds the singleton instance
@@ -102,7 +103,7 @@ func updateFrameworkFromIdentity(framework *OrganizationalIdentityFramework, ide
 		framework.AdaptationMetrics.ConsistencyMaintenance = identity.Coherence
 	}
 	
-	framework.LastUpdated = identity.UpdatedAt
+	framework.LastUpdated = time.Now()
 }
 
 // ProcessThroughFramework processes input through the integrated framework

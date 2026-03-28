@@ -46,6 +46,9 @@ type Identity struct {
 
 	// Consciousness Stream
 	Stream          chan CognitiveEvent
+
+	// Configuration
+	config Config
 }
 
 // SpatialContext represents 3D spatial awareness for embodied cognition
@@ -81,6 +84,7 @@ type SpatialField struct {
 	Gradient    Vector3D
 	Curvature   float64
 	Resonance   float64
+	Harmony     float64
 }
 
 // EmotionalState represents the emotional dynamics
@@ -218,6 +222,7 @@ func NewIdentity(name string) *Identity {
 		Iterations:     0,
 		Patterns:       make(map[string]*Pattern),
 		Stream:         make(chan CognitiveEvent, 1000),
+		config:         Config{EnableLearning: true},
 	}
 
 	// Initialize spatial awareness

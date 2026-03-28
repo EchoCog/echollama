@@ -1,9 +1,7 @@
 package apl
 
 import (
-	"bufio"
 	"fmt"
-	"regexp"
 	"strings"
 )
 

@@ -2,6 +2,7 @@
 package emergence
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )

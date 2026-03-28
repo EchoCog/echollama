@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/ollama/ollama/core/deeptreeecho"
+	"github.com/EchoCog/echollama/core/deeptreeecho"
 )
 
 // OrganizationalIdentityFramework represents the comprehensive identity system
@@ -142,6 +142,7 @@ type EmotionalProfile struct {
 	PrimaryEmotions     map[string]float64 `json:"primary_emotions"`
 	EmotionalRange      float64           `json:"emotional_range"`
 	EmotionalStability  float64           `json:"emotional_stability"`
+	EmotionalIntensity  float64           `json:"emotional_intensity"`
 	EmpathyLevel        float64           `json:"empathy_level"`
 	EmotionalTriggers   []string          `json:"emotional_triggers"`
 }
@@ -340,16 +341,6 @@ type ConsolidationRules struct {
 	RetentionRules []string      `json:"retention_rules"`
 	PriorityWeights map[string]float64 `json:"priority_weights"`
 	CompressionRules []string     `json:"compression_rules"`
-}
-
-type EvolutionStage struct {
-	StageID     string    `json:"stage_id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Objectives  []string  `json:"objectives"`
-	Metrics     map[string]float64 `json:"metrics"`
-	StartTime   time.Time `json:"start_time"`
-	Duration    time.Duration `json:"duration"`
 }
 
 type StageTransition struct {
@@ -702,7 +693,7 @@ func (oif *OrganizationalIdentityFramework) Initialize(ctx context.Context) erro
 	log.Println("🌳 Initializing Deep Tree Echo Organizational Identity Framework...")
 
 	// Initialize core identity
-	if err := oif.CoreIdentity.Process("identity_framework_initialization"); err != nil {
+	if _, err := oif.CoreIdentity.Process("identity_framework_initialization"); err != nil {
 		return fmt.Errorf("failed to initialize core identity: %w", err)
 	}
 
