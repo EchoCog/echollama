@@ -1,3 +1,5 @@
+//go:build ignore
+
 
 package main
 
@@ -6,11 +8,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/ollama/ollama/lang/apl"
-	"github.com/ollama/ollama/core/quantum"
-	"github.com/ollama/ollama/core/consciousness"
-	"github.com/ollama/ollama/core/emergence"
-	"github.com/ollama/ollama/core/meta"
+	"github.com/EchoCog/echollama/lang/apl"
+	"github.com/EchoCog/echollama/core/quantum"
+	"github.com/EchoCog/echollama/core/consciousness"
+	"github.com/EchoCog/echollama/core/emergence"
+	"github.com/EchoCog/echollama/core/meta"
 )
 
 func main() {

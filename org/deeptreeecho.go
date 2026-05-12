@@ -1,4 +1,4 @@
-package orchestration
+package org
 
 import (
 	"context"
@@ -116,12 +116,16 @@ type EvolutionTimeline struct {
 
 // EvolutionStage represents a stage in the evolution timeline
 type EvolutionStage struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Status      string    `json:"status"`
-	Progress    float64   `json:"progress"`
-	StartTime   time.Time `json:"start_time,omitempty"`
-	EndTime     *time.Time `json:"end_time,omitempty"`
+	StageID     string             `json:"stage_id,omitempty"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	Status      string             `json:"status,omitempty"`
+	Progress    float64            `json:"progress,omitempty"`
+	Objectives  []string           `json:"objectives,omitempty"`
+	Metrics     map[string]float64 `json:"metrics,omitempty"`
+	StartTime   time.Time          `json:"start_time,omitempty"`
+	EndTime     *time.Time         `json:"end_time,omitempty"`
+	Duration    time.Duration      `json:"duration,omitempty"`
 }
 
 // SpatialContext represents 3D spatial awareness for Deep Tree Echo

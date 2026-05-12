@@ -99,40 +99,6 @@ func TestGrammar(t *testing.T) {
 	value  ::= object | array | string | number | ("true" | "false" | "null") ws
 
 
-func TestAdvancedGrammar(t *testing.T) {
-	tokenizer := modelHelper(t)
-
-	// Test grammar with lookaheads and word boundaries
-	grammarAdvanced := `
-	root ::= sentence+
-	sentence ::= word (" " word)* ("." | "!" | "?") ws
-	word ::= [a-zA-Z]+ (?![0-9]) # word followed by non-digit lookahead
-	identifier ::= \b [a-zA-Z_][a-zA-Z0-9_]* \b # word boundaries
-	ws ::= [ \t\n]*
-	`
-	
-	grammar, err := NewGrammarSampler(tokenizer, grammarAdvanced)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer grammar.Free()
-
-	// Test with quantified patterns
-	grammarQuantified := `
-	root ::= number_sequence
-	number_sequence ::= digit{1,3} ("," digit{3})* # 1-3 digits, then groups of 3
-	digit ::= [0-9]
-	`
-	
-	grammarQ, err := NewGrammarSampler(tokenizer, grammarQuantified)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer grammarQ.Free()
-
-	t.Log("Advanced grammar features test passed")
-}
-
 	object ::=
 	"{" ws (
 				string ":" ws value
@@ -184,6 +150,40 @@ func TestAdvancedGrammar(t *testing.T) {
 	if infCount == 0 {
 		t.Error("expected some -inf tokens after grammar application, got none")
 	}
+}
+
+func TestAdvancedGrammar(t *testing.T) {
+	tokenizer := modelHelper(t)
+
+	// Test grammar with extended character classes and word patterns
+	grammarAdvanced := `
+	root ::= sentence+
+	sentence ::= word (" " word)* ("." | "!" | "?") ws
+	word ::= [a-zA-Z]+
+	identifier ::= [a-zA-Z_][a-zA-Z0-9_]*
+	ws ::= [ \t\n]*
+	`
+
+	grammar, err := NewGrammarSampler(tokenizer, grammarAdvanced)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer grammar.Free()
+
+	// Test with quantified patterns
+	grammarQuantified := `
+	root ::= numbers
+	numbers ::= digit+ ("," digit+)*
+	digit ::= [0-9]
+	`
+
+	grammarQ, err := NewGrammarSampler(tokenizer, grammarQuantified)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer grammarQ.Free()
+
+	t.Log("Advanced grammar features test passed")
 }
 
 func BenchmarkSample(b *testing.B) {

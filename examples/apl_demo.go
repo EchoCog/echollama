@@ -1,3 +1,5 @@
+//go:build ignore
+
 
 package main
 
@@ -5,7 +7,7 @@ import (
 	"fmt"
 	"log"
 	
-	"github.com/ollama/ollama/lang/apl"
+	"github.com/EchoCog/echollama/lang/apl"
 )
 
 func main() {

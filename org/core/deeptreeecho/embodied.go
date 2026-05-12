@@ -527,7 +527,7 @@ func (ec *EmbodiedCognition) RegisterAIProvider(name string, provider AIProvider
 	ec.mu.Lock()
 	defer ec.mu.Unlock()
 
-	ec.Models.RegisterProvider(name, provider)
+	ec.ActiveProviders[name] = provider
 
 	// Store in identity memory
 	ec.Identity.Remember(fmt.Sprintf("ai_provider_%s", name), provider.GetInfo())
@@ -585,28 +585,26 @@ func (ec *EmbodiedCognition) parseIdentityKernel() {
 
 // loadPersistentMemory loads memory from memory.json
 func (ec *EmbodiedCognition) loadPersistentMemory() {
-	content, err := os.ReadFile("memory.json")
-	if err != nil {
+	if _, err := os.Stat("memory.json"); err != nil {
 		log.Println("ℹ️  Creating new memory.json file")
 		return
 	}
 
 	// Parse and load memory structure
 	log.Println("💾 Loading persistent memory from memory.json")
-	// Implementation would parse JSON and restore memory nodes/edges
+	// TODO: parse JSON and restore memory nodes/edges
 }
 
 // loadEchoReflections loads reflections from echo_reflections.json
 func (ec *EmbodiedCognition) loadEchoReflections() {
-	content, err := os.ReadFile("echo_reflections.json")
-	if err != nil {
+	if _, err := os.Stat("echo_reflections.json"); err != nil {
 		log.Println("ℹ️  Creating new echo_reflections.json file")
 		return
 	}
 
 	// Parse and load reflection history
 	log.Println("🔄 Loading echo reflections from echo_reflections.json")
-	// Implementation would parse JSON and restore reflection patterns
+	// TODO: parse JSON and restore reflection patterns
 }
 
 // periodicReflection performs regular self-reflection cycles
@@ -687,34 +685,11 @@ func (ec *EmbodiedCognition) savePersistentMemory() {
 
 // --- Placeholder types and functions ---
 // These would be defined in other files or packages
-type Identity struct{}
-type CognitiveContext struct{}
-type GlobalCognitiveState struct{}
-type CognitivePipeline struct{}
-type PipelineStage struct{}
-type PipelineEvent struct{}
-type ModelManager struct{}
-type Vector3D struct { float64; float64; float64 }
-type SpatialContext struct { Position Vector3D; Field struct{Intensity float64} }
-type EmotionalState struct { Primary Emotion; Transitions []EmotionalTransition; Intensity float64 }
-type Emotion struct { Type string; Strength float64; Color string; Frequency float64 }
-type EmotionalTransition struct { From Emotion; To Emotion; Trigger string; Timestamp time.Time }
 type CognitivePattern struct{}
-type LongTermMemory struct{ Nodes map[string]interface{}; Coherence float64 }
 type ShortTermMemory struct{}
 type WorkingMemory struct{}
 type AIProvider interface { GetInfo() string }
-type ProviderInfo struct { Name string }
-type GenerateOptions struct { Temperature float64; Model string }
-type ChatOptions struct { GenerateOptions GenerateOptions }
-type ChatMessage struct { Content string }
 
-func NewIdentity(name string) *Identity { return &Identity{} }
-func (id *Identity) Process(input interface{}) (interface{}, error) { return input, nil }
-func (id *Identity) Think(prompt string) string { return "Identity thought: " + prompt }
-func (id *Identity) Remember(key string, value interface{}) {}
-func (id *Identity) Resonate(frequency float64) {}
-func (id *Identity) GetStatus() map[string]interface{} { return map[string]interface{}{} }
 var _ = sync.RWMutex{} // Ensure sync.RWMutex is used
 var _ = time.Time{} // Ensure time.Time is used
 var _ = os.ReadFile // Ensure os.ReadFile is used
@@ -723,35 +698,18 @@ var _ = log.Println // Ensure log.Println is used
 var _ = fmt.Sprintf // Ensure fmt.Sprintf is used
 var _ = context.Background // Ensure context.Background is used
 
-func NewModelManager(identity *Identity) *ModelManager { return &ModelManager{} }
-func (mm *ModelManager) Generate(ctx context.Context, prompt string, options GenerateOptions) (string, error) { return "AI response: " + prompt, nil }
-func (mm *ModelManager) Chat(ctx context.Context, messages []ChatMessage, options ChatOptions) (string, error) { return "AI chat response", nil }
-func (mm *ModelManager) RegisterProvider(name string, provider AIProvider) {}
-func (mm *ModelManager) SetPrimary(name string) error { return nil }
-func (mm *ModelManager) GetProviders() map[string]ProviderInfo { return map[string]ProviderInfo{} }
-func NewLongTermMemory() *LongTermMemory { return &LongTermMemory{Nodes: make(map[string]interface{}), Coherence: 0.5} }
+func NewLongTermMemory() *LongTermMemory {
+	return &LongTermMemory{
+		Memories:    make(map[string]*Memory),
+		Connections: make(map[string][]string),
+	}
+}
 func NewShortTermMemory() *ShortTermMemory { return &ShortTermMemory{} }
 func NewWorkingMemory() *WorkingMemory { return &WorkingMemory{} }
 func (ec *EmbodiedCognition) initializeCognitivePatterns() {}
 func (ec *EmbodiedCognition) continuousLearning() {}
 func (ec *EmbodiedCognition) memoryConsolidation() {}
 func (ec *EmbodiedCognition) patternEvolution() {}
-func (id *Identity) Attribute(key string) interface{} { return nil }
-func (id *Identity) SetAttribute(key string, value interface{}) {}
-func (id *Identity) SpatialContextAttribute(key string) interface{} { return nil }
-func (id *Identity) SetSpatialContextAttribute(key string, value interface{}) {}
-func (id *Identity) EmotionalStateAttribute(key string) interface{} { return nil }
-func (id *Identity) SetEmotionalStateAttribute(key string, value interface{}) {}
-func (id *Identity) MemoryAttribute(key string) interface{} { return nil }
-func (id *Identity) SetMemoryAttribute(key string, value interface{}) {}
-func (id *Identity) SetRecursiveDepth(depth int) {}
-func (id *Identity) RecursiveDepth int
-func (id *Identity) SpatialContext SpatialContext
-func (id *Identity) EmotionalState EmotionalState
-func (id *Identity) Memory struct{ Nodes map[string]interface{}; Coherence float64 }
-func (id *Identity) Coherence float64
-func (id *Identity) Patterns map[string]interface{}
-func (id *Identity) Essence string
 
 // Mock implementations for required types not fully defined above
 type MockAIProvider struct{}

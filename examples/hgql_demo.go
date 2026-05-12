@@ -1,3 +1,5 @@
+//go:build ignore
+
 
 package main
 
@@ -8,8 +10,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/ollama/ollama/core/deeptreeecho"
-	"github.com/ollama/ollama/core/hgql"
+	"github.com/EchoCog/echollama/core/deeptreeecho"
+	"github.com/EchoCog/echollama/core/hgql"
 )
 
 func main() {
